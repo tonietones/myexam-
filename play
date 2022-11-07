@@ -1,0 +1,49 @@
+---
+    - name: Exam-Project
+      hosts: all
+      become: true
+      become_user: root
+      tasks:
+
+        - name: Create an apache virtual host configuration file
+          ansible.builtin.copy:
+            dest: /etc/apache2/sites-available/anthony.conf
+            content: |
+              <VirtualHost *:80>
+                  ServerAdmin admin@anthonyaviomoh.social
+                  ServerName anthonyaviomoh.social
+                  ServerAlias www.anthonyaviomoh.social
+                  DocumentRoot /var/www/anthony/public
+
+                  <Directory /var/www/anthony/public>
+                     AllowOverride All
+                  </Directory>
+
+                  ErrorLog ${APACHE_LOG_DIR}/error.log
+                  CustomLog ${APACHE_LOG_DIR}/access.log combined
+              </VirtualHost>
+
+        - name: Installing snapd
+          apt:
+            name: snapd
+
+        - name: Installing Core
+          community.general.snap:
+            name: core
+
+        - name: Refreshing Core
+          command: snap refresh core
+
+        - name: Installing certbot
+          community.general.snap:
+            name: certbot
+            classic: true
+
+        - name: Configuring certbot
+          shell: sudo ln -s /snap/bin/certbot /usr/bin/certbot
+          args:
+            chdir: /usr/bin/
+            creates: certbot
+
+        - name: Requesting SSL Certificate
+          shell: sudo certbot --apache --agree-tos -m anthonyaviomoh@gmail.com --non-interactive -d anthonyaviomoh.social -d www.anthonyaviomoh.social
